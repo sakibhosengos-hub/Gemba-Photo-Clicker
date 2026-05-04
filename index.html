@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Factory Image Namer</title>
+<title>Gemba Photo Clicker</title>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
@@ -123,16 +123,7 @@ input.locked{border-color:rgba(52,211,153,.35);color:var(--success);background:r
 <!-- HEADER -->
 <div class="header">
   <div class="hicon"><svg viewBox="0 0 24 24"><path d="M12 15.2A3.2 3.2 0 1 0 12 8.8a3.2 3.2 0 0 0 0 6.4z"/><path d="M9 2L7.17 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3.17L15 2H9zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg></div>
-  <div><div class="htitle">Gemba Photo Clicker</div><div class="hsub">@F#L## format</div></div>
-</div>
-
-<!-- LIVE PREVIEW -->
-<div class="prev-bar">
-  <div>
-    <div class="prev-code" id="live-prev"><span class="e">@</span><span class="e">F#</span><span class="e">L##</span></div>
-    <div class="prev-meta" id="prev-meta">Fill in the fields below</div>
-  </div>
-  <button class="copy-btn" id="copy-btn" onclick="copyName()">Copy</button>
+  <div><div class="htitle">Gemba Photo Clicker</div><div class="hsub">Apex Holding Limited - GOS</div></div>
 </div>
 
 <!-- CAMERA / UPLOAD — TOP -->
@@ -196,25 +187,25 @@ input.locked{border-color:rgba(52,211,153,.35);color:var(--success);background:r
   <div class="fgrid">
 
     <div class="ffull">
-      <div class="flbl">Department <span class="badge">@</span></div>
+      <div class="flbl">Department</div>
       <div class="lock-row">
-        <input type="text" id="dept" placeholder="P / C / F / L" maxlength="3" oninput="onDeptInput()" onblur="autoLock('dept')"/>
+        <input type="text" id="dept" placeholder="e.g. Knit Production" maxlength="32" oninput="onDeptInput()" onblur="autoLock('dept')"/>
         <button class="lock-btn" id="dept-lbtn" onclick="toggleLock('dept')">Lock</button>
       </div>
-      <div style="font-size:10px;color:var(--muted);margin-top:4px">P=Production &nbsp;·&nbsp; C=Cutting &nbsp;·&nbsp; F=Finishing &nbsp;·&nbsp; L=Lingerie</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px"></div>
     </div>
 
     <div>
-      <div class="flbl">Floor no. <span class="badge">F#</span></div>
+      <div class="flbl">Floor no. </div>
       <div class="lock-row">
-        <input type="text" id="floor" placeholder="e.g. 2" maxlength="3" oninput="update()" onblur="autoLock('floor')"/>
+        <input type="text" id="floor" placeholder="e.g. 02" maxlength="2" oninput="update()" onblur="autoLock('floor')"/>
         <button class="lock-btn" id="floor-lbtn" onclick="toggleLock('floor')">Lock</button>
       </div>
     </div>
 
     <div>
-      <div class="flbl">Line no. <span class="badge">L##</span></div>
-      <input type="number" id="line" min="1" max="99" placeholder="e.g. 05" oninput="update()"/>
+      <div class="flbl">Line no.</div>
+      <input type="number" id="line" min="1" max="99" placeholder="e.g. 71" oninput="update()"/>
     </div>
 
   </div>
