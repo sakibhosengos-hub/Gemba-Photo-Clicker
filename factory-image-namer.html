@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Factory Image Namer</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+:root{
+  --bg:#0e0f13;--surface:#16181f;--surface2:#1e2028;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
+  --accent:#4f9eff;--accent2:#2d7dd2;
+  --text:#f0f2f7;--muted:#6b7280;--success:#34d399;--warning:#fbbf24;
+  --font:'Barlow',sans-serif;--mono:'Share Tech Mono',monospace;
+  --r:10px;--rl:14px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding-bottom:60px}
+
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:20}
+.hicon{width:36px;height:36px;background:var(--accent2);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.hicon svg{width:18px;height:18px;fill:#fff}
+.htitle{font-size:15px;font-weight:700;letter-spacing:-0.3px}
+.hsub{font-size:11px;color:var(--muted);font-family:var(--mono)}
+
+.prev-bar{background:#0a1525;border-bottom:1px solid rgba(79,158,255,0.18);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.prev-code{font-family:var(--mono);font-size:24px;letter-spacing:2px;line-height:1}
+.prev-code .f{color:var(--accent)}.prev-code .e{color:rgba(255,255,255,0.13)}
+.prev-meta{font-size:11px;color:var(--muted);margin-top:3px}
+.copy-btn{background:rgba(79,158,255,0.1);border:1px solid rgba(79,158,255,0.28);border-radius:8px;padding:7px 13px;color:var(--accent);font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .15s;flex-shrink:0}
+.copy-btn:hover{background:rgba(79,158,255,0.2)}
+.copy-btn.ok{color:var(--success);border-color:rgba(52,211,153,0.35);background:rgba(52,211,153,0.08)}
+
+.sec{padding:14px 16px;border-bottom:1px solid var(--border)}
+.sec-lbl{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+
+.tabs{display:flex;gap:6px;margin-bottom:12px}
+.tab{flex:1;padding:9px 6px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface2);color:var(--muted);font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;transition:all .15s}
+.tab svg{width:13px;height:13px;fill:currentColor;flex-shrink:0}
+.tab.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.tab:not(.active):hover{color:var(--text);background:#252830}
+
+.cam-vp{width:100%;border-radius:var(--rl);overflow:hidden;background:#000;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;position:relative;border:1px solid var(--border)}
+.cam-vp video{width:100%;height:100%;object-fit:cover;display:none}
+.cam-off{display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--muted)}
+.cam-off svg{width:40px;height:40px;fill:#2a2d36}
+.cam-off span{font-size:12px}
+.grid-ov{position:absolute;inset:0;pointer-events:none;display:none}
+.grid-ov svg{width:100%;height:100%}
+
+.brow{display:flex;gap:7px;margin-top:10px}
+.btn{flex:1;padding:11px 8px;border-radius:var(--r);font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);transition:all .15s;letter-spacing:.02em}
+.btn svg{width:15px;height:15px;fill:currentColor;flex-shrink:0}
+.btn:active{transform:scale(.97)}
+.btn-p{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-p:hover{background:#3a8ee0}
+.btn-s{background:rgba(52,211,153,.1);border-color:rgba(52,211,153,.3);color:var(--success)}
+.btn-d{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.28);color:#f87171}
+.btn-d:hover{background:rgba(239,68,68,.18)}
+.btn-z{background:rgba(251,191,36,.1);border-color:rgba(251,191,36,.3);color:var(--warning)}
+.btn-z:hover{background:rgba(251,191,36,.18)}
+.btn:not(.btn-p):not(.btn-s):not(.btn-d):not(.btn-z):hover{background:#252830}
+
+.upload-z{border:1.5px dashed var(--border2);border-radius:var(--rl);padding:26px 16px;text-align:center;cursor:pointer;transition:all .2s;display:block}
+.upload-z:hover,.upload-z.drag{border-color:var(--accent);background:rgba(79,158,255,.04)}
+.upload-z input{display:none}
+.upload-z svg{width:32px;height:32px;fill:var(--muted);margin-bottom:8px}
+.upload-z p{font-size:13px;font-weight:500;color:var(--text)}
+.upload-z small{font-size:11px;color:var(--muted);margin-top:3px;display:block}
+
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ffull{grid-column:1/-1}
+.flbl{font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;display:flex;align-items:center;gap:5px}
+.badge{font-family:var(--mono);font-size:10px;background:rgba(79,158,255,.14);color:var(--accent);padding:1px 5px;border-radius:3px}
+input[type=text],input[type=number]{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);padding:10px 12px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none;appearance:none}
+input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,158,255,.14)}
+input::placeholder{color:var(--muted)}
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
+input.locked{border-color:rgba(52,211,153,.35);color:var(--success);background:rgba(52,211,153,.05);cursor:default}
+.lock-row{display:flex;gap:6px;align-items:stretch}
+.lock-row input{flex:1}
+.lock-btn{padding:0 13px;border-radius:var(--r);border:1px solid var(--border2);background:var(--surface2);color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:var(--font);transition:all .15s;flex-shrink:0;min-height:42px}
+.lock-btn:hover{color:var(--text);background:#252830}
+.lock-btn.on{color:var(--success);border-color:rgba(52,211,153,.35);background:rgba(52,211,153,.07)}
+
+.legend{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.leg{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:7px 9px;text-align:center}
+.leg-s{font-family:var(--mono);font-size:14px;color:var(--accent);font-weight:600}
+.leg-d{font-size:10px;color:var(--muted);margin-top:2px;line-height:1.3}
+
+.zip-bar{padding:12px 16px;background:rgba(251,191,36,.04);border-top:1px solid rgba(251,191,36,.13);border-bottom:1px solid rgba(251,191,36,.13);display:flex;align-items:center;gap:10px}
+.zip-info{flex:1}
+.zip-info strong{color:#fbbf24;display:block;font-size:13px;font-weight:600;margin-bottom:1px}
+.zip-info span{font-size:11px;color:var(--muted)}
+
+.gal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.gal-cnt{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.gal-cnt strong{color:var(--accent)}
+.clr-btn{font-size:12px;color:var(--muted);cursor:pointer;text-decoration:underline;background:none;border:none;font-family:var(--font)}
+.clr-btn:hover{color:#f87171}
+.gal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.thumb{border-radius:var(--r);overflow:hidden;border:1px solid var(--border);background:var(--surface2)}
+.thumb img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block}
+.tinfo{padding:6px 7px 7px}
+.tname{font-family:var(--mono);font-size:10px;color:var(--accent);word-break:break-all;line-height:1.3}
+.tact{display:flex;gap:4px;margin-top:5px}
+.tbtn{flex:1;padding:5px 0;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:11px;cursor:pointer;font-family:var(--font);font-weight:500;display:flex;align-items:center;justify-content:center;gap:3px;transition:all .15s}
+.tbtn svg{width:10px;height:10px;fill:currentColor}
+.tbtn.dl:hover{color:var(--accent);border-color:rgba(79,158,255,.4)}
+.tbtn.del:hover{color:#f87171;border-color:rgba(248,113,113,.4)}
+.gal-empty{text-align:center;padding:24px 12px;color:var(--muted);font-size:12px}
+.gal-empty svg{width:28px;height:28px;fill:var(--border2);display:block;margin:0 auto 7px}
+
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(14px);background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:8px 16px;font-size:12px;font-weight:500;color:var(--text);opacity:0;transition:all .22s;pointer-events:none;z-index:99;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- HEADER -->
+<div class="header">
+  <div class="hicon"><svg viewBox="0 0 24 24"><path d="M12 15.2A3.2 3.2 0 1 0 12 8.8a3.2 3.2 0 0 0 0 6.4z"/><path d="M9 2L7.17 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3.17L15 2H9zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg></div>
+  <div><div class="htitle">Factory Image Namer</div><div class="hsub">@F#L## format</div></div>
+</div>
+
+<!-- LIVE PREVIEW -->
+<div class="prev-bar">
+  <div>
+    <div class="prev-code" id="live-prev"><span class="e">@</span><span class="e">F#</span><span class="e">L##</span></div>
+    <div class="prev-meta" id="prev-meta">Fill in the fields below</div>
+  </div>
+  <button class="copy-btn" id="copy-btn" onclick="copyName()">Copy</button>
+</div>
+
+<!-- CAMERA / UPLOAD — TOP -->
+<div class="sec">
+  <div class="tabs">
+    <div class="tab active" id="tab-cam" onclick="switchTab('cam')">
+      <svg viewBox="0 0 24 24"><path d="M12 15.2A3.2 3.2 0 1 0 12 8.8a3.2 3.2 0 0 0 0 6.4z"/><path d="M9 2L7.17 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3.17L15 2H9zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg>Camera
+    </div>
+    <div class="tab" id="tab-up" onclick="switchTab('up')">
+      <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>Upload
+    </div>
+  </div>
+  <div id="panel-cam">
+    <div class="cam-vp" id="cam-vp">
+      <div class="cam-off" id="cam-off">
+        <svg viewBox="0 0 24 24"><path d="M12 15.2A3.2 3.2 0 1 0 12 8.8a3.2 3.2 0 0 0 0 6.4z"/><path d="M9 2L7.17 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3.17L15 2H9zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg>
+        <span>Tap "Start camera" to begin</span>
+      </div>
+      <video id="vid" autoplay playsinline muted></video>
+      <div class="grid-ov" id="cam-grid">
+        <svg viewBox="0 0 400 300" preserveAspectRatio="none">
+          <line x1="133" y1="0" x2="133" y2="300" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+          <line x1="267" y1="0" x2="267" y2="300" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+          <line x1="0" y1="100" x2="400" y2="100" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+          <line x1="0" y1="200" x2="400" y2="200" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+          <rect x="155" y="115" width="90" height="70" stroke="rgba(79,158,255,0.4)" stroke-width="1.5" fill="none" rx="3"/>
+        </svg>
+      </div>
+      <canvas id="snap-canvas" style="display:none"></canvas>
+    </div>
+    <div class="brow" id="cam-btns-off">
+      <button class="btn btn-p" onclick="startCam()">
+        <svg viewBox="0 0 24 24"><path d="M12 15.2A3.2 3.2 0 1 0 12 8.8a3.2 3.2 0 0 0 0 6.4z"/><path d="M9 2L7.17 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3.17L15 2H9zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg>Start camera
+      </button>
+    </div>
+    <div class="brow" id="cam-btns-on" style="display:none">
+      <button class="btn btn-s" onclick="takeSnap()">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>Capture
+      </button>
+      <button class="btn" onclick="flipCam()">
+        <svg viewBox="0 0 24 24"><path d="M7.47 21.49C4.2 19.93 1.86 16.76 1.5 13H0l3-3 3 3H4.54c.36 2.77 2 5.15 4.27 6.55zM12 4c2.37 0 4.46.97 5.99 2.52L16 8.5h6v-6l-2.18 2.18C17.9 2.84 15.11 2 12 2 8.7 2 5.68 3.3 3.42 5.42l1.42 1.42A8.003 8.003 0 0 1 12 4zm8.5 9H24l-3 3-3-3h2.5c-.36-2.77-2-5.15-4.27-6.55l1.44-1.44C20.4 6.72 22.1 9.63 22.1 13zM12 20c-2.37 0-4.46-.97-5.99-2.52L8 15.5H2v6l2.18-2.18C6.1 21.16 8.89 22 12 22c3.3 0 6.32-1.3 8.58-3.42l-1.42-1.42A8.003 8.003 0 0 1 12 20z"/></svg>Flip
+      </button>
+      <button class="btn btn-d" onclick="stopCam()">
+        <svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12"/></svg>Stop
+      </button>
+    </div>
+  </div>
+  <div id="panel-up" style="display:none">
+    <label class="upload-z" id="drop-zone">
+      <input type="file" id="file-in" accept="image/*" multiple onchange="handleFiles(this.files)"/>
+      <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
+      <p>Tap to choose photos</p>
+      <small>JPG, PNG, HEIC — multiple files supported</small>
+    </label>
+  </div>
+</div>
+
+<!-- NAME CONFIGURATION -->
+<div class="sec">
+  <div class="sec-lbl">Name configuration</div>
+  <div class="fgrid">
+
+    <div class="ffull">
+      <div class="flbl">Department <span class="badge">@</span></div>
+      <div class="lock-row">
+        <input type="text" id="dept" placeholder="P / C / F / L" maxlength="3" oninput="onDeptInput()" onblur="autoLock('dept')"/>
+        <button class="lock-btn" id="dept-lbtn" onclick="toggleLock('dept')">Lock</button>
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px">P=Production &nbsp;·&nbsp; C=Cutting &nbsp;·&nbsp; F=Finishing &nbsp;·&nbsp; L=Lingerie</div>
+    </div>
+
+    <div>
+      <div class="flbl">Floor no. <span class="badge">F#</span></div>
+      <div class="lock-row">
+        <input type="text" id="floor" placeholder="e.g. 2" maxlength="3" oninput="update()" onblur="autoLock('floor')"/>
+        <button class="lock-btn" id="floor-lbtn" onclick="toggleLock('floor')">Lock</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="flbl">Line no. <span class="badge">L##</span></div>
+      <input type="number" id="line" min="1" max="99" placeholder="e.g. 05" oninput="update()"/>
+    </div>
+
+  </div>
+</div>
+
+<!-- FORMAT LEGEND -->
+<div class="sec">
+  <div class="sec-lbl">Format guide</div>
+  <div class="legend">
+    <div class="leg"><div class="leg-s">@</div><div class="leg-d">Department<br>P/C/F/L</div></div>
+    <div class="leg"><div class="leg-s">F#</div><div class="leg-d">Floor no.<br>e.g. F2, F3</div></div>
+    <div class="leg"><div class="leg-s">L##</div><div class="leg-d">Line no.<br>e.g. L05, L12</div></div>
+  </div>
+</div>
+
+<!-- ZIP DOWNLOAD BAR (shown when photos exist) -->
+<div class="zip-bar" id="zip-bar" style="display:none">
+  <div class="zip-info">
+    <strong id="zip-lbl">Download all photos</strong>
+    <span>Packaged as a single ZIP file</span>
+  </div>
+  <button class="btn btn-z" id="zip-btn" style="flex:0 0 auto;padding:10px 16px" onclick="downloadZip()">
+    <svg viewBox="0 0 24 24"><path d="M20 6h-2.18c.07-.31.18-.6.18-.93C18 3.39 16.61 2 14.93 2c-.97 0-1.76.5-2.28 1.24L12 4.18l-.65-.94C10.83 2.5 10.04 2 9.07 2 7.39 2 6 3.39 6 5.07c0 .33.11.62.18.93H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-5-2.5c.83 0 1.5.67 1.5 1.5S15.83 6.5 15 6.5 13.5 5.83 13.5 5s.67-1.5 1.5-1.5zM9 3.5c.83 0 1.5.67 1.5 1.5S9.83 6.5 9 6.5 7.5 5.83 7.5 5 8.17 3.5 9 3.5zM20 19H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 11 8.76l1-1.36 1 1.36L15.38 12 17 10.83 14.92 8H20v6z"/></svg>
+    Download ZIP
+  </button>
+</div>
+
+<!-- PHOTO LIBRARY — BOTTOM -->
+<div class="sec">
+  <div class="gal-head">
+    <div class="gal-cnt">Photo library &nbsp;<strong id="ph-count">0</strong></div>
+    <button class="clr-btn" onclick="clearAll()">Clear all</button>
+  </div>
+  <div id="gallery">
+    <div class="gal-empty">
+      <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+      No photos yet — use camera or upload files above
+    </div>
+  </div>
+</div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+let stream=null,useFront=false,photos=[],counter=0;
+const locks={dept:false,floor:false};
+
+function pad(n){return String(n).padStart(2,'0')}
+const dMap={P:'Production',C:'Cutting',F:'Finishing',L:'Lingerie'};
+
+function getName(){
+  const d=document.getElementById('dept').value.trim().toUpperCase();
+  const f=document.getElementById('floor').value.trim();
+  const l=document.getElementById('line').value.trim();
+  if(!d||!f||!l)return null;
+  return `${d}F${f}L${pad(l)}`;
+}
+
+function update(){
+  const d=document.getElementById('dept').value.trim().toUpperCase();
+  const f=document.getElementById('floor').value.trim();
+  const l=document.getElementById('line').value.trim();
+  const p=document.getElementById('live-prev');
+  const m=document.getElementById('prev-meta');
+  p.innerHTML=
+    (d?`<span class="f">${d}</span>`:`<span class="e">@</span>`)+
+    (f?`<span class="f">F${f}</span>`:`<span class="e">F#</span>`)+
+    (l?`<span class="f">L${pad(l)}</span>`:`<span class="e">L##</span>`);
+  m.textContent=(d&&f&&l)?`${dMap[d]||d}  ·  Floor ${f}  ·  Line ${pad(l)}`:'Fill in the fields below';
+}
+
+function onDeptInput(){
+  const el=document.getElementById('dept');
+  el.value=el.value.toUpperCase();
+  update();
+}
+
+function autoLock(field){
+  if(document.getElementById(field).value.trim()&&!locks[field]) applyLock(field,true);
+}
+
+function toggleLock(field){applyLock(field,!locks[field]);}
+
+function applyLock(field,lock){
+  locks[field]=lock;
+  const el=document.getElementById(field);
+  const btn=document.getElementById(field+'-lbtn');
+  el.readOnly=lock;
+  el.classList.toggle('locked',lock);
+  btn.textContent=lock?'Edit':'Lock';
+  btn.classList.toggle('on',lock);
+  if(!lock)el.focus();
+}
+
+function switchTab(t){
+  document.getElementById('tab-cam').classList.toggle('active',t==='cam');
+  document.getElementById('tab-up').classList.toggle('active',t==='up');
+  document.getElementById('panel-cam').style.display=t==='cam'?'':'none';
+  document.getElementById('panel-up').style.display=t==='up'?'':'none';
+  if(t==='up'&&stream)stopCam();
+}
+
+async function startCam(){
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:useFront?'user':'environment'},audio:false});
+    const v=document.getElementById('vid');
+    v.srcObject=stream;v.style.display='block';
+    document.getElementById('cam-off').style.display='none';
+    document.getElementById('cam-grid').style.display='block';
+    document.getElementById('cam-btns-off').style.display='none';
+    document.getElementById('cam-btns-on').style.display='flex';
+  }catch(e){toast('Camera access denied or unavailable');}
+}
+
+function stopCam(){
+  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
+  const v=document.getElementById('vid');v.style.display='none';
+  document.getElementById('cam-off').style.display='flex';
+  document.getElementById('cam-grid').style.display='none';
+  document.getElementById('cam-btns-off').style.display='flex';
+  document.getElementById('cam-btns-on').style.display='none';
+}
+
+async function flipCam(){useFront=!useFront;stopCam();await startCam();}
+
+function takeSnap(){
+  const name=getName();
+  if(!name){toast('Fill in Department, Floor & Line first');return;}
+  const v=document.getElementById('vid');
+  const c=document.getElementById('snap-canvas');
+  c.width=v.videoWidth;c.height=v.videoHeight;
+  c.getContext('2d').drawImage(v,0,0);
+  counter++;
+  addPhoto(c.toDataURL('image/jpeg',0.92),`${name}_${counter}.jpg`);
+  const vp=document.getElementById('cam-vp');
+  vp.style.outline='3px solid var(--accent)';
+  setTimeout(()=>vp.style.outline='',200);
+}
+
+function handleFiles(files){
+  const name=getName();
+  if(!name){toast('Fill in Department, Floor & Line first');return;}
+  Array.from(files).forEach(f=>{
+    const r=new FileReader();
+    r.onload=e=>{counter++;addPhoto(e.target.result,`${name}_${counter}.${f.name.split('.').pop()||'jpg'}`);};
+    r.readAsDataURL(f);
+  });
+  document.getElementById('file-in').value='';
+}
+
+function addPhoto(dataUrl,filename){
+  photos.push({dataUrl,filename});
+  renderGallery();
+}
+
+function renderGallery(){
+  const cnt=photos.length;
+  document.getElementById('ph-count').textContent=cnt;
+  const zb=document.getElementById('zip-bar');
+  if(cnt){
+    zb.style.display='flex';
+    document.getElementById('zip-lbl').textContent=`Download all ${cnt} photo${cnt!==1?'s':''}`;
+  }else{
+    zb.style.display='none';
+  }
+  const g=document.getElementById('gallery');
+  if(!cnt){
+    g.innerHTML='<div class="gal-empty"><svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>No photos yet — use camera or upload files above</div>';
+    return;
+  }
+  g.innerHTML='<div class="gal-grid">'+photos.map((p,i)=>`
+    <div class="thumb">
+      <img src="${p.dataUrl}" alt="${p.filename}" loading="lazy"/>
+      <div class="tinfo">
+        <div class="tname">${p.filename}</div>
+        <div class="tact">
+          <button class="tbtn dl" onclick="dlPhoto(${i})">
+            <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 8h14v2H5v-2z"/></svg>Save
+          </button>
+          <button class="tbtn del" onclick="delPhoto(${i})">
+            <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>Del
+          </button>
+        </div>
+      </div>
+    </div>`).join('')+'</div>';
+}
+
+function dlPhoto(i){
+  const p=photos[i];const a=document.createElement('a');
+  a.href=p.dataUrl;a.download=p.filename;a.click();
+}
+function delPhoto(i){photos.splice(i,1);renderGallery();}
+function clearAll(){
+  if(!photos.length)return;
+  if(confirm(`Delete all ${photos.length} photo(s)?`)){photos=[];counter=0;renderGallery();}
+}
+
+function copyName(){
+  const name=getName();
+  if(!name){toast('Fill in all fields first');return;}
+  navigator.clipboard.writeText(name).then(()=>{
+    const btn=document.getElementById('copy-btn');
+    btn.textContent='Copied!';btn.classList.add('ok');
+    setTimeout(()=>{btn.textContent='Copy';btn.classList.remove('ok');},2000);
+  }).catch(()=>toast('Copy failed'));
+}
+
+async function downloadZip(){
+  if(!photos.length){toast('No photos to download');return;}
+  const btn=document.getElementById('zip-btn');
+  const orig=btn.innerHTML;
+  btn.textContent='Zipping…';btn.disabled=true;
+  try{
+    const zip=new JSZip();
+    photos.forEach(p=>{zip.file(p.filename,p.dataUrl.split(',')[1],{base64:true});});
+    const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=`${getName()||'factory-photos'}_photos.zip`;
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+    toast(`ZIP downloaded — ${photos.length} photo${photos.length!==1?'s':''}`);
+  }catch(e){toast('ZIP error: '+e.message);}
+  btn.innerHTML=orig;btn.disabled=false;
+}
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2400);
+}
+
+const dz=document.getElementById('drop-zone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');handleFiles(e.dataTransfer.files);});
+</script>
+</body>
+</html>
