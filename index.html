@@ -198,14 +198,14 @@ input.locked{border-color:rgba(52,211,153,.35);color:var(--success);background:r
     <div>
       <div class="flbl">Floor no. </div>
       <div class="lock-row">
-        <input type="text" id="floor" placeholder="e.g. 02" maxlength="1" oninput="update()" onblur="autoLock('floor')"/>
+        <input type="text" id="floor" placeholder="e.g. 2" maxlength="1" oninput="update()" onblur="autoLock('floor')"/>
         <button class="lock-btn" id="floor-lbtn" onclick="toggleLock('floor')">Lock</button>
       </div>
     </div>
 
     <div>
       <div class="flbl">Line no.</div>
-      <input type="number" id="line" min="1" max="99" placeholder="e.g. 71" oninput="update()"/>
+      <input type="number" id="line" min="1" max="3" placeholder="e.g. 71" oninput="update()"/>
     </div>
 
   </div>
