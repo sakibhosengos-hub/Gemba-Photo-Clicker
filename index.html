@@ -115,6 +115,25 @@ input.locked{border-color:rgba(52,211,153,.35);color:var(--success);background:r
 
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(14px);background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:8px 16px;font-size:12px;font-weight:500;color:var(--text);opacity:0;transition:all .22s;pointer-events:none;z-index:99;white-space:nowrap}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Photo Regulation */
+.reg-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.reg-full{grid-column:1/-1}
+.slider-wrap{position:relative}
+input[type=range]{width:100%;-webkit-appearance:none;appearance:none;height:5px;border-radius:3px;background:var(--border2);outline:none;cursor:pointer;margin:6px 0 2px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:18px;height:18px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid #fff}
+.slider-vals{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--muted)}
+.slider-cur{text-align:center;font-family:var(--mono);font-size:13px;color:var(--accent);font-weight:600;margin-bottom:2px}
+.reg-select{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);padding:10px 12px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;appearance:none;-webkit-appearance:none;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236b7280'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:18px}
+.reg-select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,158,255,.14)}
+.reg-badge-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.reg-pill{font-size:11px;padding:3px 9px;border-radius:20px;border:1px solid var(--border2);color:var(--muted);background:var(--surface2);cursor:pointer;font-family:var(--font);font-weight:500;transition:all .15s}
+.reg-pill.active{background:rgba(79,158,255,.15);border-color:rgba(79,158,255,.4);color:var(--accent)}
+.reg-pill:hover:not(.active){color:var(--text);background:#252830}
+.reg-preview-row{display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:8px 12px;margin-top:6px}
+.reg-preview-val{font-family:var(--mono);font-size:12px;color:var(--success)}
+.reg-preview-lbl{font-size:11px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -221,6 +240,64 @@ input.locked{border-color:rgba(52,211,153,.35);color:var(--success);background:r
   </div>
 </div>
 
+<!-- PHOTO REGULATION SETTINGS -->
+<div class="sec" id="reg-sec">
+  <div class="sec-lbl">📷 Photo Regulation</div>
+  <div class="reg-grid">
+
+    <!-- Quality -->
+    <div class="reg-full">
+      <div class="flbl">JPEG Quality <span class="badge" id="q-badge">92%</span></div>
+      <div class="slider-cur" id="q-cur">92%</div>
+      <input type="range" id="q-slider" min="20" max="100" step="1" value="92" oninput="onQualityChange(this.value)"/>
+      <div class="slider-vals"><span>Low (20%)</span><span>High (100%)</span></div>
+    </div>
+
+    <!-- Max Resolution -->
+    <div class="reg-full">
+      <div class="flbl">Max Resolution</div>
+      <div class="reg-badge-row" id="res-pills">
+        <button class="reg-pill" onclick="setRes('original')">Original</button>
+        <button class="reg-pill" onclick="setRes('2560')">2560px</button>
+        <button class="reg-pill active" onclick="setRes('1920')">1920px</button>
+        <button class="reg-pill" onclick="setRes('1280')">1280px</button>
+        <button class="reg-pill" onclick="setRes('800')">800px</button>
+      </div>
+    </div>
+
+    <!-- Aspect Ratio -->
+    <div>
+      <div class="flbl">Aspect Ratio</div>
+      <select class="reg-select" id="aspect-sel" onchange="onAspectChange()">
+        <option value="free">Free (keep original)</option>
+        <option value="4/3">4:3 (standard)</option>
+        <option value="16/9">16:9 (widescreen)</option>
+        <option value="1/1">1:1 (square)</option>
+        <option value="3/2">3:2 (photo)</option>
+      </select>
+    </div>
+
+    <!-- Format -->
+    <div>
+      <div class="flbl">Output Format</div>
+      <select class="reg-select" id="fmt-sel" onchange="onFmtChange()">
+        <option value="jpeg">JPEG</option>
+        <option value="png">PNG (lossless)</option>
+        <option value="webp">WebP</option>
+      </select>
+    </div>
+
+    <!-- Estimated size indicator -->
+    <div class="reg-full">
+      <div class="reg-preview-row">
+        <div><div class="reg-preview-lbl">Estimated file size</div><div class="reg-preview-val" id="est-size">~1.2 MB per photo</div></div>
+        <div style="text-align:right"><div class="reg-preview-lbl">Output resolution</div><div class="reg-preview-val" id="est-res">max 1920px wide</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <!-- ZIP DOWNLOAD BAR (shown when photos exist) -->
 <div class="zip-bar" id="zip-bar" style="display:none">
   <div class="zip-info">
@@ -253,6 +330,73 @@ input.locked{border-color:rgba(52,211,153,.35);color:var(--success);background:r
 <script>
 let stream=null,useFront=false,photos=[],counter=0;
 const locks={dept:false,floor:false};
+
+/* ── Photo Regulation state ── */
+const reg={quality:0.92,maxPx:'1920',aspect:'free',fmt:'jpeg'};
+
+function onQualityChange(v){
+  reg.quality=v/100;
+  document.getElementById('q-cur').textContent=v+'%';
+  document.getElementById('q-badge').textContent=v+'%';
+  updateEstimate();
+}
+function setRes(val){
+  reg.maxPx=val;
+  document.querySelectorAll('#res-pills .reg-pill').forEach(b=>b.classList.toggle('active',b.textContent.replace('px','').trim()===val||(val==='original'&&b.textContent==='Original')));
+  updateEstimate();
+}
+function onAspectChange(){reg.aspect=document.getElementById('aspect-sel').value;updateEstimate();}
+function onFmtChange(){
+  reg.fmt=document.getElementById('fmt-sel').value;
+  const qs=document.getElementById('q-slider');
+  const qsec=qs.closest('.reg-full');
+  const disabled=reg.fmt==='png';
+  qs.disabled=disabled;
+  qsec.style.opacity=disabled?'0.4':'1';
+  updateEstimate();
+}
+function updateEstimate(){
+  const fmtMult={jpeg:1,webp:0.7,png:3};
+  const resMult={original:2.5,'2560':2.0,'1920':1.2,'1280':0.6,'800':0.25};
+  const mb=(resMult[reg.maxPx]||1.2)*fmtMult[reg.fmt||'jpeg']*reg.quality;
+  document.getElementById('est-size').textContent=`~${mb.toFixed(1)} MB per photo`;
+  const resLabel=reg.maxPx==='original'?'no limit':`max ${reg.maxPx}px wide`;
+  document.getElementById('est-res').textContent=resLabel;
+}
+
+function applyRegulation(sourceCanvas){
+  const {quality,maxPx,aspect,fmt}=reg;
+  let sw=sourceCanvas.width,sh=sourceCanvas.height;
+
+  /* resize */
+  let dw=sw,dh=sh;
+  if(maxPx!=='original'){
+    const limit=parseInt(maxPx);
+    if(dw>limit){const r=limit/dw;dw=limit;dh=Math.round(dh*r);}
+  }
+
+  /* crop aspect */
+  let sx=0,sy=0,sW=sw,sH=sh;
+  if(aspect!=='free'){
+    const [ar,ab]=aspect.split('/').map(Number);
+    const targetRatio=ar/ab;
+    const srcRatio=sw/sh;
+    if(srcRatio>targetRatio){sW=Math.round(sh*targetRatio);sx=Math.round((sw-sW)/2);}
+    else{sH=Math.round(sw/targetRatio);sy=Math.round((sh-sH)/2);}
+    const scale=dw/sW;
+    dh=Math.round(sH*scale);
+  }
+
+  const out=document.createElement('canvas');
+  out.width=dw;out.height=dh;
+  const ctx=out.getContext('2d');
+  ctx.drawImage(sourceCanvas,sx,sy,sW,sH,0,0,dw,dh);
+
+  const mimeMap={jpeg:'image/jpeg',webp:'image/webp',png:'image/png'};
+  const mime=mimeMap[fmt]||'image/jpeg';
+  const q=(fmt==='png')?undefined:quality;
+  return{dataUrl:out.toDataURL(mime,q),ext:fmt==='jpeg'?'jpg':fmt};
+}
 
 function pad(n){return String(n).padStart(2,'0')}
 const dMap={P:'Production',C:'Cutting',F:'Finishing',L:'Lingerie'};
@@ -340,7 +484,8 @@ function takeSnap(){
   c.width=v.videoWidth;c.height=v.videoHeight;
   c.getContext('2d').drawImage(v,0,0);
   counter++;
-  addPhoto(c.toDataURL('image/jpeg',0.92),`${name}_${counter}.jpg`);
+  const {dataUrl,ext}=applyRegulation(c);
+  addPhoto(dataUrl,`${name}_${counter}.${ext}`);
   const vp=document.getElementById('cam-vp');
   vp.style.outline='3px solid var(--accent)';
   setTimeout(()=>vp.style.outline='',200);
@@ -351,7 +496,18 @@ function handleFiles(files){
   if(!name){toast('Fill in Department, Floor & Line first');return;}
   Array.from(files).forEach(f=>{
     const r=new FileReader();
-    r.onload=e=>{counter++;addPhoto(e.target.result,`${name}_${counter}.${f.name.split('.').pop()||'jpg'}`);};
+    r.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        const c=document.createElement('canvas');
+        c.width=img.naturalWidth;c.height=img.naturalHeight;
+        c.getContext('2d').drawImage(img,0,0);
+        counter++;
+        const {dataUrl,ext}=applyRegulation(c);
+        addPhoto(dataUrl,`${name}_${counter}.${ext}`);
+      };
+      img.src=e.target.result;
+    };
     r.readAsDataURL(f);
   });
   document.getElementById('file-in').value='';
